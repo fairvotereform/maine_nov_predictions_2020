@@ -1,0 +1,108 @@
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(tidyverse)
+
+senate_pred = read.csv("senate_pred.csv") 
+
+
+## create data frames with key stats for plotting
+savage_transfer = senate_pred %>% 
+  select(p_Savage_to_Collins, p_Savage_to_Gideon, p_Savage_to_Exhaust) %>% 
+  gather("candidate", "value") %>%
+  group_by(candidate) %>%
+  summarise(mean =  mean(value), 
+            ci_lower = quantile(value, 0.05), 
+            ci_upper = quantile(value, 0.95))
+
+linn_transfer = senate_pred %>% 
+  select(p_Linn_to_Collins, p_Linn_to_Gideon, p_Linn_to_Exhaust) %>% 
+  gather("candidate", "value") %>%
+  group_by(candidate) %>%
+  summarise(mean =  mean(value), 
+            ci_lower = quantile(value, 0.05), 
+            ci_upper = quantile(value, 0.95))
+
+
+
+savage_transfer
+linn_transfer
+
+```
+
+
+
+```{r}
+
+savage_transfer_plot = ggplot(data=savage_transfer, aes(x=mean, y=factor(candidate, level = c("p_Savage_to_Exhaust", "p_Savage_to_Collins", "p_Savage_to_Gideon")), color=candidate)) + 
+  geom_point(aes(size=30)) + 
+  
+  ## republican red & democrat blue 
+  scale_color_manual(breaks = c("p_Savage_to_Exhaust", "p_Savage_to_Collins", "p_Savage_to_Gideon"),
+                        values=c("#333333", "#FF0000", "#0015BC" )) + 
+  
+  ## add values above the dot
+  geom_text(aes(label=label_percent(0.1)( mean)), position = position_nudge(y=0.45, x=0.01), size=5) + 
+  
+  ## error bars
+  geom_errorbarh(aes(xmax=ci_upper, xmin=ci_lower), height = 0.5, size=1) + 
+  
+  ## misc style and color choices
+  theme(panel.background = element_rect(fill="transparent", color = NA), 
+        panel.grid.major.x = element_line("lightgray"), 
+        legend.position = "none", 
+        axis.ticks = element_blank(), 
+        axis.title.x = element_text(vjust=-1, size=15), 
+        axis.title.y = element_blank(), 
+        axis.text.x = element_text(angle=45, size=10), 
+        axis.text.y = element_blank()) + 
+  
+  ## specify the scale on x axis -- this will change once we know poll results
+  scale_x_continuous(name = "Percent of Votes Transferred", 
+                     breaks = c(0, 0.1, 0.2, .3, .4, .5, .6, .7, .8), 
+                     labels = c("0%", "10%", "20%", "30%", "40%", "50%", "60%", "70%", "80%")) 
+
+## print it 
+savage_transfer_plot
+
+## save it
+ggsave("savage_transfer.png", plot=savage_transfer_plot, height=2.5, width = 3.5)
+
+  
+```
+
+
+
+
+```{r}
+linn_transfer_plot = ggplot(data=linn_transfer, aes(x=mean, y=factor(candidate, level = c("p_Linn_to_Exhaust", "p_Linn_to_Collins", "p_Linn_to_Gideon")), color=candidate)) + 
+  geom_point(aes(size=20)) + 
+  scale_color_manual(breaks = c("p_Linn_to_Exhaust", "p_Linn_to_Collins", "p_Linn_to_Gideon"),
+                        values=c("#333333", "#FF0000", "#0015BC")) + 
+  geom_text(aes(label=label_percent(0.1)( mean)), position = position_nudge(y=0.45, x=0.01), size=5) + 
+  geom_errorbarh(aes(xmax=ci_upper, xmin=ci_lower), height = 0.5, size=1) + 
+  theme(panel.background = element_rect(fill="transparent", color = NA), 
+        panel.grid.major.x = element_line("lightgray"), 
+        legend.position = "none", 
+        axis.ticks = element_blank(), 
+        axis.title.x = element_text(vjust=-1, size=15), 
+        axis.title.y = element_blank(), 
+        axis.text.x = element_text(angle=45, size=10), 
+        axis.text.y = element_blank()) + 
+  scale_x_continuous(name = "Percent of Votes Transferred", 
+                     breaks = c(0, 0.1, 0.2, .3, .4, .5, .6, .7, .8), 
+                     limits = c(0,0.7),
+                     labels = c("0%", "10%", "20%", "30%", "40%", "50%", "60%", "70%", "80%")) 
+
+linn_transfer_plot
+
+ggsave("linn_transfer.png", plot=linn_transfer_plot, height=2.5, width = 3.5)
+
+
+```
+
+
+
